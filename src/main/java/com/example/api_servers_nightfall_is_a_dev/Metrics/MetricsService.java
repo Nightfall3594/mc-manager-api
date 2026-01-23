@@ -1,0 +1,70 @@
+package com.example.api_servers_nightfall_is_a_dev.Metrics;
+
+import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.util.Random;
+
+@Service
+@EnableScheduling
+@AllArgsConstructor
+public class MetricsService {
+
+    @Autowired
+    private final SimpMessagingTemplate template;
+
+    // Temporary random generator for mock data
+    private final Random randomGenerator = new Random();
+
+    @Scheduled(fixedRate = 1000)
+    public void pollData(){
+        // TODO: Add ways to gather metrics
+        Metric metric = Metric.builder()
+                .isOnline(checkServerStatus())
+                .tps(getTPS())
+                .uptime(getUptime())
+                .cpu(getCpuUsage())
+                .ram(getRAMUsage())
+                .disk(getDiskUsage())
+                .players(getPlayerCount())
+                .build();
+
+        template.convertAndSend("/topic/metrics/live", metric);
+    }
+
+
+    // TODO: Implement actual data gathering methods
+
+    private boolean checkServerStatus(){
+        return randomGenerator.nextBoolean();
+    }
+
+    private int getTPS(){
+        return randomGenerator.nextInt(0, 20);
+    }
+
+    private LocalDate getUptime(){
+        return null;
+    }
+
+    private float getCpuUsage() {
+        return randomGenerator.nextFloat(0, 100);
+    }
+
+    private float getRAMUsage() {
+        return randomGenerator.nextFloat(0, 100);
+    }
+
+    private float getDiskUsage() {
+        return randomGenerator.nextFloat(0, 100);
+    }
+
+    private int getPlayerCount(){
+        return randomGenerator.nextInt(0,10);
+    }
+}
