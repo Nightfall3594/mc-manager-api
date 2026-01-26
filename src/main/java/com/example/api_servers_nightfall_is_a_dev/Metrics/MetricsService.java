@@ -1,5 +1,6 @@
 package com.example.api_servers_nightfall_is_a_dev.Metrics;
 
+import com.example.api_servers_nightfall_is_a_dev.common.ServerStatus;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -18,6 +19,9 @@ public class MetricsService {
     @Autowired
     private final SimpMessagingTemplate template;
 
+    @Autowired
+    private final ServerStatus serverStatus;
+
     // Temporary random generator for mock data
     private final Random randomGenerator = new Random();
 
@@ -25,7 +29,7 @@ public class MetricsService {
     public void pollData(){
         // TODO: Add ways to gather metrics
         Metric metric = Metric.builder()
-                .isOnline(checkServerStatus())
+                .isOnline(serverStatus.isOnline())
                 .tps(getTPS())
                 .uptime(getUptime())
                 .cpu(getCpuUsage())
@@ -39,10 +43,6 @@ public class MetricsService {
 
 
     // TODO: Implement actual data gathering methods
-
-    private boolean checkServerStatus(){
-        return randomGenerator.nextBoolean();
-    }
 
     private int getTPS(){
         return randomGenerator.nextInt(0, 20);
