@@ -1,5 +1,6 @@
 package com.example.api_servers_nightfall_is_a_dev.Mods;
 
+import com.example.api_servers_nightfall_is_a_dev.common.ServerStatus;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,9 @@ public class ModController {
 
     @Autowired
     private final ModService modService;
+
+    @Autowired
+    private final ServerStatus serverStatus;
 
     @GetMapping("/mods")
     public List<Mod> listMods() {
@@ -36,6 +40,12 @@ public class ModController {
 
     @DeleteMapping("/mods")
     public ResponseEntity<String> deleteMod(@RequestParam String fileName) {
+
+        if(serverStatus.isOnline()) {
+            return ResponseEntity.badRequest()
+                    .body("Cannot delete mods while the server is online.");
+        }
+
         boolean deleted = modService.deleteModFile(fileName);
         if (deleted) {
             return ResponseEntity.ok().build();
@@ -45,7 +55,13 @@ public class ModController {
     }
 
     @PostMapping("/mods")
-    public ResponseEntity<String> uploadMod( @RequestParam("file") MultipartFile file) throws IOException {
+    public ResponseEntity<String> uploadMod(@RequestParam("file") MultipartFile file) throws IOException {
+
+        if(serverStatus.isOnline()) {
+            return ResponseEntity.badRequest()
+                    .body("Cannot add mods while the server is online.");
+        }
+
         modService.saveModFile(file.getOriginalFilename(), file.getBytes());
         return ResponseEntity.ok().build();
     }
