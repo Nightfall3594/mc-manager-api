@@ -1,0 +1,37 @@
+package com.example.api_servers_nightfall_is_a_dev.Mods;
+
+import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+@RestController
+@AllArgsConstructor
+public class ModController {
+
+    @Autowired
+    private final ModService modService;
+
+    @GetMapping("/mods")
+    public List<Mod> listMods() {
+        return modService.listMods();
+    }
+
+    @GetMapping("/mods/download")
+    public ResponseEntity<byte[]> downloadMod(@RequestParam String fileName) {
+
+        byte[] modData = modService.getModFile(fileName);
+        if (modData == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
+                .header("Content-Type", "application/java-archive")
+                .body(modData);
+    }
+
+}
