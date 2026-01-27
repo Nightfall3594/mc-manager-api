@@ -98,4 +98,25 @@ public class ModService {
         }
     }
 
+    public boolean saveModFile(String fileName, byte[] modData) {
+        Path modsFolder = Path.of("data/minecraft/mods/").normalize();
+
+        Path modFilePath = modsFolder.resolve(fileName).normalize();
+
+        if (!modFilePath.startsWith(modsFolder)) {
+            throw new RuntimeException("Invalid file path");
+        }
+
+        if (Files.exists(modFilePath)) {
+            throw new RuntimeException("Mod file already exists: " + modFilePath);
+        }
+
+        try {
+            Files.write(modFilePath, modData);
+            return true;
+        } catch (IOException e) {
+            throw new RuntimeException("Error saving mod file: " + modFilePath, e);
+        }
+    }
+
 }
