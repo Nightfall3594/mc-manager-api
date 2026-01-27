@@ -82,4 +82,20 @@ public class ModService {
         }
     }
 
+    public boolean deleteModFile(String fileName) {
+        Path modsFolder = Path.of("data/minecraft/mods/").normalize();
+
+        Path modFilePath = modsFolder.resolve(fileName).normalize();
+
+        if (!modFilePath.startsWith(modsFolder)) {
+            throw new RuntimeException("Invalid file path");
+        }
+
+        try {
+            return Files.deleteIfExists(modFilePath);
+        } catch (IOException e) {
+            throw new RuntimeException("Error deleting mod file: " + modFilePath, e);
+        }
+    }
+
 }

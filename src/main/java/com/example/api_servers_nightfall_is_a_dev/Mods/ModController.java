@@ -3,6 +3,7 @@ package com.example.api_servers_nightfall_is_a_dev.Mods;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,4 +35,13 @@ public class ModController {
                 .body(modData);
     }
 
+    @DeleteMapping("/mods")
+    public ResponseEntity<String> deleteMod(@RequestParam String fileName) {
+        boolean deleted = modService.deleteModFile(fileName);
+        if (deleted) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }
