@@ -1,5 +1,7 @@
 package com.example.api_servers_nightfall_is_a_dev.Metrics;
 
+import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Event;
+import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Metric;
 import com.example.api_servers_nightfall_is_a_dev.common.ServerStatus;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,7 +10,12 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 @Service
@@ -87,4 +94,40 @@ public class MetricsService {
     private int getPlayerCount(){
         return randomGenerator.nextInt(0,10);
     }
+
+    /**
+     * Helper method to parse latest.log for join/leave events.
+     * @return List of join/leave events
+     */
+    private List<Event> parseLatestLog() {
+        Path logFilePath = Path.of("data/minecraft/logs/latest.log");
+        List<Event> events = new ArrayList<>();
+        try {
+            Files.readAllLines(logFilePath).stream()
+                    .filter(log ->
+                            log.contains("joined the game")
+                            || log.contains("left the game"))
+                    .forEach(log -> {
+                        String timestamp = log.substring(1, 9);
+                        String message = log.split("]:", 2)[1].strip();
+                        events.add(new Event(timestamp, message));
+                    });
+
+            return events;
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to read log file: ", e);
+        }
+    }
+
+    /**
+     * Get the last 5 join/leave events from latest.log
+     * @return List of last 5 join/leave events
+     */
+    public List<Event> getEvents(){
+        List<Event> events = parseLatestLog();
+        if(events.size() <= 5) return events;
+        return events.subList(events.size() - 5, events.size());
+
+    }
+
 }
