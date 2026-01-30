@@ -44,6 +44,10 @@ public class MetricsService {
 
     // TODO: Implement actual data gathering methods
 
+    /**
+     * Get current ticks per second.
+     * @return ticks per second (0-20)
+     */
     private int getTPS(){
         return randomGenerator.nextInt(0, 20);
     }
@@ -52,18 +56,34 @@ public class MetricsService {
         return null;
     }
 
+    /**
+     * Get total cpu usage.
+     * @return percentage of cpu usage (0-100)
+     */
     private float getCpuUsage() {
         return randomGenerator.nextFloat(0, 100);
     }
 
+    /**
+     * Get total ram usage.
+     * @return percentage of ram usage (0-100)
+     */
     private float getRAMUsage() {
         return randomGenerator.nextFloat(0, 100);
     }
 
+    /**
+     * Get total disk usage.
+     * @return percentage of disk usage (0-100)
+     */
     private float getDiskUsage() {
         return randomGenerator.nextFloat(0, 100);
     }
 
+    /**
+     * Get current player count.
+     * @return number of players online
+     */
     private int getPlayerCount(){
         return randomGenerator.nextInt(0,10);
     }
