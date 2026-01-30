@@ -1,5 +1,8 @@
 package com.example.api_servers_nightfall_is_a_dev.Metrics;
 
+import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Event;
+import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Metric;
+import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Player;
 import com.example.api_servers_nightfall_is_a_dev.common.ServerStatus;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,8 +11,12 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
-import java.util.Random;
+import java.time.LocalTime;
+import java.util.*;
 
 @Service
 @EnableScheduling
@@ -44,6 +51,10 @@ public class MetricsService {
 
     // TODO: Implement actual data gathering methods
 
+    /**
+     * Get current ticks per second.
+     * @return ticks per second (0-20)
+     */
     private int getTPS(){
         return randomGenerator.nextInt(0, 20);
     }
@@ -52,19 +63,106 @@ public class MetricsService {
         return null;
     }
 
+    /**
+     * Get total cpu usage.
+     * @return percentage of cpu usage (0-100)
+     */
     private float getCpuUsage() {
         return randomGenerator.nextFloat(0, 100);
     }
 
+    /**
+     * Get total ram usage.
+     * @return percentage of ram usage (0-100)
+     */
     private float getRAMUsage() {
         return randomGenerator.nextFloat(0, 100);
     }
 
+    /**
+     * Get total disk usage.
+     * @return percentage of disk usage (0-100)
+     */
     private float getDiskUsage() {
         return randomGenerator.nextFloat(0, 100);
     }
 
+    /**
+     * Get current player count.
+     * @return number of players online
+     */
     private int getPlayerCount(){
         return randomGenerator.nextInt(0,10);
     }
+
+    /**
+     * Helper method to parse latest.log for join/leave events.
+     * @return List of join/leave events
+     */
+    private List<Event> parseLatestLog() {
+        Path logFilePath = Path.of("data/minecraft/logs/latest.log");
+        List<Event> events = new ArrayList<>();
+        try {
+            Files.readAllLines(logFilePath).stream()
+                    .filter(log ->
+                            log.contains("joined the game")
+                            || log.contains("left the game"))
+                    .forEach(log -> {
+                        String timestamp = log.substring(1, 9);
+                        String message = log.split("]:", 2)[1].strip();
+                        events.add(new Event(timestamp, message));
+                    });
+
+            return events;
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to read log file: ", e);
+        }
+    }
+
+    /**
+     * Get the last 5 join/leave events from latest.log
+     * @return List of last 5 join/leave events
+     */
+    public List<Event> getEvents(){
+        List<Event> events = parseLatestLog();
+        if(events.size() <= 5) return events;
+        return events.subList(events.size() - 5, events.size());
+
+    }
+
+    /**
+     * Get the players that are currently online,
+     * along with their playtime.
+     * @return List of online players
+     */
+    public List<Player> getOnlinePlayers(){
+
+        List<Event> playerLogs = parseLatestLog().stream()
+                .filter(log ->
+                        log.getMessage().contains("joined the game")
+                                || log.getMessage().contains("left the game"))
+                .toList();
+
+        // List of all active usernames
+        Map<String, LocalTime> joinTimes = new HashMap<>();
+        playerLogs.forEach(log -> {
+            if(log.getMessage().contains("joined the game")) {
+                String username = log.getMessage().replace(" joined the game", "").strip();
+                LocalTime joinTime = LocalTime.parse(log.getTimestamp());
+                joinTimes.put(username, joinTime);
+
+            } else if (log.getMessage().contains("left the game")) {
+                String username = log.getMessage().replace(" left the game", "").strip();
+                joinTimes.remove(username);
+            }
+        });
+
+        List<Player> playerList = new ArrayList<>();
+        joinTimes.keySet().forEach(playerName -> {
+            playerList.add(new Player(playerName, joinTimes.get(playerName).toString()));
+        });
+
+        return playerList;
+    }
+
 }
