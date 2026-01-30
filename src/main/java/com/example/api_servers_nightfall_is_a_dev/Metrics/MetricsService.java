@@ -2,6 +2,7 @@ package com.example.api_servers_nightfall_is_a_dev.Metrics;
 
 import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Event;
 import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Metric;
+import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Player;
 import com.example.api_servers_nightfall_is_a_dev.common.ServerStatus;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,9 +15,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.time.LocalTime;
+import java.util.*;
 
 @Service
 @EnableScheduling
@@ -128,6 +128,41 @@ public class MetricsService {
         if(events.size() <= 5) return events;
         return events.subList(events.size() - 5, events.size());
 
+    }
+
+    /**
+     * Get the players that are currently online,
+     * along with their playtime.
+     * @return List of online players
+     */
+    public List<Player> getOnlinePlayers(){
+
+        List<Event> playerLogs = parseLatestLog().stream()
+                .filter(log ->
+                        log.getMessage().contains("joined the game")
+                                || log.getMessage().contains("left the game"))
+                .toList();
+
+        // List of all active usernames
+        Map<String, LocalTime> joinTimes = new HashMap<>();
+        playerLogs.forEach(log -> {
+            if(log.getMessage().contains("joined the game")) {
+                String username = log.getMessage().replace(" joined the game", "").strip();
+                LocalTime joinTime = LocalTime.parse(log.getTimestamp());
+                joinTimes.put(username, joinTime);
+
+            } else if (log.getMessage().contains("left the game")) {
+                String username = log.getMessage().replace(" left the game", "").strip();
+                joinTimes.remove(username);
+            }
+        });
+
+        List<Player> playerList = new ArrayList<>();
+        joinTimes.keySet().forEach(playerName -> {
+            playerList.add(new Player(playerName, joinTimes.get(playerName).toString()));
+        });
+
+        return playerList;
     }
 
 }
