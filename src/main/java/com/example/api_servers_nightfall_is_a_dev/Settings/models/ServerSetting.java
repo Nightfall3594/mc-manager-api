@@ -1,4 +1,4 @@
-package com.example.api_servers_nightfall_is_a_dev.Settings;
+package com.example.api_servers_nightfall_is_a_dev.Settings.models;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AccessLevel;

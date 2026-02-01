@@ -1,5 +1,6 @@
 package com.example.api_servers_nightfall_is_a_dev.Settings;
 
+import com.example.api_servers_nightfall_is_a_dev.Settings.models.ServerSetting;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
