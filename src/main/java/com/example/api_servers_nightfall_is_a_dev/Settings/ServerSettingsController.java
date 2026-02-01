@@ -1,5 +1,6 @@
 package com.example.api_servers_nightfall_is_a_dev.Settings;
 
+import com.example.api_servers_nightfall_is_a_dev.Settings.models.ServerSetting;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -18,13 +20,19 @@ public class ServerSettingsController {
     private final ServerSettingService settingService;
 
     @GetMapping("/server-properties")
-    public Map<String, String> getGamerules() {
+    public List<ServerSetting> getGamerules() {
         return settingService.getServerSetting();
     }
 
     @PostMapping("/server-properties")
     public ResponseEntity<String> updateGamerules(@RequestBody Map<String, String> newGamerules) {
-        settingService.updateServerSetting(newGamerules);
+
+        try {
+            settingService.updateServerSetting(newGamerules);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(e.getMessage());
+        }
         return ResponseEntity.ok()
                 .body("Gamerules updated successfully");
     }
