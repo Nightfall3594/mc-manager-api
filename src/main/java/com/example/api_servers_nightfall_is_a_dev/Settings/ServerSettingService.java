@@ -40,6 +40,20 @@ public class ServerSettingService {
 
         Path serverPropertiesFile = Path.of("data/minecraft/server.properties");
 
+        List<String> invalidKeys = newGamerules.keySet().stream()
+                // filter keys not in schema or have invalid values
+                .filter(key -> !schema.containsKey(key) || !schema.isValidValue(key, newGamerules.get(key)))
+                .toList();
+
+        if (!invalidKeys.isEmpty()) {
+            throw new IllegalArgumentException("Invalid gamerules keys or values: " + String.join(", ", invalidKeys));
+        }
+
+        // Validate all new gamerules keys
+        List<ServerSetting> validKeys = newGamerules.keySet().stream()
+                .map(key -> schema.createServerSetting(key, newGamerules.get(key)))
+                .toList();
+
         Map<String, String> gameRules = new HashMap<>();
         try {
             // get all existing server properties
@@ -52,8 +66,8 @@ public class ServerSettingService {
                     });
 
             // update with new gamerules
-            for (String key : newGamerules.keySet()) {
-                gameRules.put(key, newGamerules.get(key));
+            for (ServerSetting item : validKeys) {
+                gameRules.put(item.getKey(), item.getValue());
             }
 
             // write back to server.properties file
@@ -61,7 +75,6 @@ public class ServerSettingService {
             for (String key : gameRules.keySet()) {
                 linesToWrite.add(key + "=" + gameRules.get(key));
             }
-
             Files.write(serverPropertiesFile, linesToWrite, StandardCharsets.UTF_8);
 
         } catch (IOException e) {

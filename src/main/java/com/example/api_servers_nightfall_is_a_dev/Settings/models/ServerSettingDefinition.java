@@ -12,7 +12,7 @@ import java.util.Map;
 @NoArgsConstructor
 public class ServerSettingDefinition {
 
-    private static final Map<String, FieldType> ALLOWED_KEYS = Map.ofEntries(
+    private static final Map<String, FieldType> KEY_TYPE_MAP = Map.ofEntries(
             Map.entry("gamemode", FieldType.ENUM),
             Map.entry("difficulty", FieldType.ENUM),
             Map.entry("hardcore", FieldType.BOOLEAN),
@@ -46,7 +46,50 @@ public class ServerSettingDefinition {
      * @return true if valid, false otherwise
      */
     public boolean containsKey(String key) {
-        return ALLOWED_KEYS.containsKey(key);
+        return KEY_TYPE_MAP.containsKey(key);
+    }
+
+    /**
+     * Check if the provided value is valid for the given key.
+     * @param key server setting key
+     * @param value server setting value
+     * @return true if valid, false otherwise
+     */
+    public boolean isValidValue(String key, String value) {
+        if (!containsKey(key)) {
+            return false;
+        }
+
+        FieldType type = KEY_TYPE_MAP.get(key);
+        switch (type) {
+            case BOOLEAN:
+                return value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false");
+            case INTEGER:
+                try {
+                    Integer.parseInt(value);
+                    return true;
+                } catch (NumberFormatException e) {
+                    return false;
+                }
+            case ENUM:
+                List<String> options = ALLOWED_ENUM_OPTIONS.getOrDefault(key, List.of());
+                return options.contains(value.toLowerCase());
+            case STRING:
+                return true; // Any string is valid
+            default:
+                return false;
+        }
+    }
+
+    // Sanitize the value. Remove leading zeroes (for int), convert to lowercase (for enum), etc.
+    private String sanitizeValue(String value, FieldType type) {
+        return switch (type) {
+            case BOOLEAN -> value.equalsIgnoreCase("true") ? "true" : "false";
+            case INTEGER -> String.valueOf(Integer.parseInt(value));
+            case ENUM -> value.toLowerCase();
+            case STRING -> value;
+            default -> throw new IllegalArgumentException("Unsupported FieldType: " + type);
+        };
     }
 
     /**
@@ -57,12 +100,14 @@ public class ServerSettingDefinition {
      * @return server setting object
      */
     public ServerSetting createServerSetting(String key, String value) {
-        FieldType type = ALLOWED_KEYS.get(key);
+        FieldType type = KEY_TYPE_MAP.get(key);
         List<String> options = ALLOWED_ENUM_OPTIONS.getOrDefault(key, List.of());
+
+        String sanitizedValue = sanitizeValue(value, type);
 
         return ServerSetting.builder()
                 .key(key)
-                .value(value)
+                .value(sanitizedValue)
                 .type(type)
                 .options(options)
                 .build();

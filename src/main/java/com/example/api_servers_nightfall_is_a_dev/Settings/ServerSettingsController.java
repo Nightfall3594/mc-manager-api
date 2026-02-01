@@ -26,7 +26,13 @@ public class ServerSettingsController {
 
     @PostMapping("/server-properties")
     public ResponseEntity<String> updateGamerules(@RequestBody Map<String, String> newGamerules) {
-        settingService.updateServerSetting(newGamerules);
+
+        try {
+            settingService.updateServerSetting(newGamerules);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(e.getMessage());
+        }
         return ResponseEntity.ok()
                 .body("Gamerules updated successfully");
     }
