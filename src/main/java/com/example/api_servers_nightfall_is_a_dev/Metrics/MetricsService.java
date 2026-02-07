@@ -4,6 +4,11 @@ import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Event;
 import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Metric;
 import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Player;
 import com.example.api_servers_nightfall_is_a_dev.common.ServerStatus;
+import io.fabric8.kubernetes.api.model.Node;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.metrics.v1beta1.PodMetrics;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import jakarta.annotation.PreDestroy;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -12,6 +17,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -29,6 +36,9 @@ public class MetricsService {
     @Autowired
     private final ServerStatus serverStatus;
 
+    @Autowired
+    private final KubernetesClient client;
+
     // Temporary random generator for mock data
     private final Random randomGenerator = new Random();
 
@@ -40,6 +50,7 @@ public class MetricsService {
                 .tps(getTPS())
                 .uptime(getUptime())
                 .cpu(getCpuUsage())
+                .maxCpu(getCpuCapacity())
                 .ram(getRAMUsage())
                 .disk(getDiskUsage())
                 .players(getPlayerCount())
@@ -59,16 +70,56 @@ public class MetricsService {
         return randomGenerator.nextInt(0, 20);
     }
 
+
     private LocalDate getUptime(){
         return null;
     }
 
+
     /**
-     * Get total cpu usage.
-     * @return percentage of cpu usage (0-100)
+     * Get total cpu usage in cores
+     * @return cpu usage of the associated pod(s)
      */
-    private float getCpuUsage() {
-        return randomGenerator.nextFloat(0, 100);
+    private double getCpuUsage() {
+
+        PodMetrics podMetrics = client.top()
+                .pods()
+                .inNamespace("chillingmc")
+                .withName("chillingmc-0")
+                .metric();
+
+        BigDecimal cpuUsage = podMetrics.getContainers()
+                .getFirst()
+                .getUsage()
+                .get("cpu")
+                .getNumericalAmount();
+
+        return cpuUsage.doubleValue();
+    }
+
+
+    /**
+     * Maximum cpu capacity of the node in cores
+     * @return maximum cpu of the node
+     */
+    private double getCpuCapacity() {
+
+        Pod pod = client.pods()
+                .inNamespace("chillingmc")
+                .withName("chillingmc-0")
+                .get();
+
+        String nodeName = pod.getSpec().getNodeName();
+
+        Node node = client.nodes()
+                .withName(nodeName)
+                .get();
+
+        return node.getStatus()
+                .getCapacity()
+                .get("cpu")
+                .getNumericalAmount()
+                .doubleValue();
     }
 
     /**
@@ -165,4 +216,8 @@ public class MetricsService {
         return playerList;
     }
 
+    @PreDestroy
+    public void closeK8sClient(){
+        client.close();
+    }
 }

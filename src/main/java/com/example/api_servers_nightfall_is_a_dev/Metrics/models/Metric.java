@@ -14,9 +14,13 @@ public class Metric {
     private int tps;
     private LocalDate uptime;
 
-    private float cpu;
+    private double cpu;
     private float ram;
     private float disk;
+
+    private double maxCpu;
+    private float maxRam;
+    private float maxDisk;
 
     private int players;
 
