@@ -17,11 +17,11 @@ public class Metric {
 
     private double cpu;
     private BigInteger ram;
-    private float disk;
+    private BigInteger disk;
 
     private double maxCpu;
     private BigInteger maxRam;
-    private float maxDisk;
+    private BigInteger maxDisk;
 
     private int players;
 

@@ -6,6 +6,7 @@ import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Player;
 import com.example.api_servers_nightfall_is_a_dev.common.ServerStatus;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.Node;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.metrics.v1beta1.PodMetrics;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -17,15 +18,18 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.stream.Stream;
 
 @Service
 @EnableScheduling
@@ -56,6 +60,7 @@ public class MetricsService {
                 .ram(getRAMUsage())
                 .maxRam(getRamCapacity())
                 .disk(getDiskUsage())
+                .maxDisk(getDiskCapacity())
                 .players(getPlayerCount())
                 .build();
 
@@ -171,11 +176,57 @@ public class MetricsService {
     }
 
     /**
-     * Get total disk usage.
-     * @return percentage of disk usage (0-100)
+     * Get total storage used by the server
+     * @return total storage used by the server in bytes
      */
-    private float getDiskUsage() {
-        return randomGenerator.nextFloat(0, 100);
+    private BigInteger getDiskUsage() {
+        Path folder = Paths.get("data");
+        try (Stream<Path> stream = Files.walk(folder)) {
+            long size = stream
+                    .filter(Files::isRegularFile)
+                    .mapToLong(p -> {
+                        try {
+                            return Files.size(p);
+                        } catch (IOException e) {
+                            return 0L;
+                        }
+                    })
+                    .sum();
+
+            return BigInteger.valueOf(size);
+
+        } catch (IOException e) {
+            return BigInteger.ZERO;
+        }
+    }
+
+    /**
+     * Get the total allocated disk capacity of the server
+     * @return maximum disk capacity of the volume/node in bytes
+     */
+    private BigInteger getDiskCapacity() {
+
+        Pod pod = client.pods()
+                .inNamespace("chillingmc")
+                .withName("chillingmc-0")
+                .get();
+
+        String pvcName = pod.getSpec()
+                .getVolumes()
+                .getFirst()
+                .getPersistentVolumeClaim()
+                .getClaimName();
+
+        PersistentVolumeClaim pvc = client.persistentVolumeClaims()
+                .inNamespace("chillingmc")
+                .withName(pvcName)
+                .get();
+
+        return pvc.getStatus()
+                    .getCapacity()
+                    .get("storage")
+                    .getNumericalAmount()
+                    .toBigIntegerExact();
     }
 
     /**
