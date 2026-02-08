@@ -4,6 +4,7 @@ import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Event;
 import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Metric;
 import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Player;
 import com.example.api_servers_nightfall_is_a_dev.common.ServerStatus;
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.metrics.v1beta1.PodMetrics;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -52,6 +54,7 @@ public class MetricsService {
                 .cpu(getCpuUsage())
                 .maxCpu(getCpuCapacity())
                 .ram(getRAMUsage())
+                .maxRam(getRamCapacity())
                 .disk(getDiskUsage())
                 .players(getPlayerCount())
                 .build();
@@ -123,11 +126,48 @@ public class MetricsService {
     }
 
     /**
-     * Get total ram usage.
-     * @return percentage of ram usage (0-100)
+     * Get the ram usage of the server container
+     * @return ram usage in bytes
      */
-    private float getRAMUsage() {
-        return randomGenerator.nextFloat(0, 100);
+    private BigInteger getRAMUsage() {
+
+        PodMetrics metrics = client.top()
+                .pods()
+                .inNamespace("chillingmc")
+                .withName("chillingmc-0")
+                .metric();
+
+        BigDecimal ramUsage = metrics.getContainers()
+                .getFirst()
+                .getUsage()
+                .get("memory")
+                .getNumericalAmount();
+
+        return ramUsage.toBigIntegerExact();
+    }
+
+    /**
+     * Get total ram capacity of the node of the server container
+     * @return maximum ram capacity in bytes
+     */
+    private BigInteger getRamCapacity(){
+        Pod pod = client.pods()
+                .inNamespace("chillingmc")
+                .withName("chillingmc-0")
+                .get();
+
+        String nodeName = pod.getSpec()
+                .getNodeName();
+
+        Node node = client.nodes()
+                .withName(nodeName)
+                .get();
+
+        return node.getStatus()
+                .getCapacity()
+                .get("memory")
+                .getNumericalAmount()
+                .toBigIntegerExact();
     }
 
     /**

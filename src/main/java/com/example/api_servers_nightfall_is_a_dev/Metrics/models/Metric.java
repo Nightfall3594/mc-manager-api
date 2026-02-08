@@ -2,6 +2,7 @@ package com.example.api_servers_nightfall_is_a_dev.Metrics.models;
 
 import lombok.*;
 
+import java.math.BigInteger;
 import java.time.LocalDate;
 
 @Data
@@ -15,11 +16,11 @@ public class Metric {
     private LocalDate uptime;
 
     private double cpu;
-    private float ram;
+    private BigInteger ram;
     private float disk;
 
     private double maxCpu;
-    private float maxRam;
+    private BigInteger maxRam;
     private float maxDisk;
 
     private int players;
