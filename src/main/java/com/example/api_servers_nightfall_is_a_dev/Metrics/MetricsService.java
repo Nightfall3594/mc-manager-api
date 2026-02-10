@@ -4,7 +4,6 @@ import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Event;
 import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Metric;
 import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Player;
 import com.example.api_servers_nightfall_is_a_dev.common.ServerStatus;
-import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -18,16 +17,13 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.*;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -79,8 +75,32 @@ public class MetricsService {
     }
 
 
-    private LocalDate getUptime(){
-        return null;
+    /**
+     * Get the server's uptime
+     * @return total server uptime in seconds
+     */
+    private BigInteger getUptime(){
+
+        if(!serverStatus.isOnline()){
+            return BigInteger.ZERO;
+        }
+
+        Pod pod = client.pods()
+                .inNamespace("chillingmc")
+                .withName("chillingmc-0")
+                .get();
+
+        OffsetDateTime containerStarted = OffsetDateTime.parse(pod.getStatus()
+                .getContainerStatuses()
+                .getFirst()
+                .getState()
+                .getRunning()
+                .getStartedAt());
+
+        Duration uptime = Duration.between(containerStarted, OffsetDateTime.now());
+
+        return BigInteger.valueOf(uptime.getSeconds());
+
     }
 
 

@@ -3,7 +3,6 @@ package com.example.api_servers_nightfall_is_a_dev.Metrics.models;
 import lombok.*;
 
 import java.math.BigInteger;
-import java.time.LocalDate;
 
 @Data
 @Builder(access = AccessLevel.PUBLIC)
@@ -13,7 +12,7 @@ public class Metric {
 
     private boolean isOnline;
     private int tps;
-    private LocalDate uptime;
+    private BigInteger uptime;
 
     private double cpu;
     private BigInteger ram;
