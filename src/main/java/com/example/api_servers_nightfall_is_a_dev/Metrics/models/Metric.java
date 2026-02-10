@@ -23,5 +23,6 @@ public class Metric {
     private BigInteger maxDisk;
 
     private int players;
+    private int maxPlayers;
 
 }

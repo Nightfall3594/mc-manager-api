@@ -57,7 +57,8 @@ public class MetricsService {
                 .maxRam(getRamCapacity())
                 .disk(getDiskUsage())
                 .maxDisk(getDiskCapacity())
-                .players(getPlayerCount())
+                .players(getOnlinePlayers().size())
+                .maxPlayers(getMaxPlayers())
                 .build();
 
         template.convertAndSend("/topic/metrics/live", metric);
@@ -249,12 +250,29 @@ public class MetricsService {
                     .toBigIntegerExact();
     }
 
+
     /**
-     * Get current player count.
-     * @return number of players online
+     * Get the server's player count limit
+     * @return server's max player count limit
      */
-    private int getPlayerCount(){
-        return randomGenerator.nextInt(0,10);
+    private int getMaxPlayers(){
+
+        Path serverPropertiesFile = Path.of("data/minecraft/server.properties");
+
+        try {
+
+            String lines = Files.readAllLines(serverPropertiesFile).stream()
+                    .filter(line -> line.startsWith("max-players"))
+                    .findFirst()
+                    .orElse("");
+
+            if(lines.isEmpty()) return 20;
+
+            return Integer.parseInt(lines.split("=")[1]);
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
