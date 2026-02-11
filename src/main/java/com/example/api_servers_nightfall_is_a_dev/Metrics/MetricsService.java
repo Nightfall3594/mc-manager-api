@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.metrics.v1beta1.PodMetrics;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import jakarta.annotation.PreDestroy;
 import lombok.AllArgsConstructor;
+import org.glavo.rcon.Rcon;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -25,6 +26,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 @Service
@@ -41,8 +44,8 @@ public class MetricsService {
     @Autowired
     private final KubernetesClient client;
 
-    // Temporary random generator for mock data
-    private final Random randomGenerator = new Random();
+    @Autowired
+    private final Rcon rconClient;
 
     @Scheduled(fixedRate = 1000)
     public void pollData(){
@@ -68,11 +71,26 @@ public class MetricsService {
     // TODO: Implement actual data gathering methods
 
     /**
-     * Get current ticks per second.
-     * @return ticks per second (0-20)
+     * Get the server's average tick rate
+     * @return float representing average server tps (0-20)
      */
-    private int getTPS(){
-        return randomGenerator.nextInt(0, 20);
+    private float getTPS(){
+
+        try {
+            String output = rconClient.command("tick query");
+            Matcher matcher = Pattern.compile("Average time per tick:\\s*(\\d+(?:\\.\\d+)?)ms")
+                    .matcher(output);
+
+            if(matcher.find()){
+                float msPerTick = Float.parseFloat(matcher.group(1));
+                return Math.min(1000.0f / msPerTick, 20);  // note: 20 is the max server tps
+            }
+
+            return 0;
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 

@@ -11,7 +11,7 @@ import java.math.BigInteger;
 public class Metric {
 
     private boolean isOnline;
-    private int tps;
+    private float tps;
     private BigInteger uptime;
 
     private double cpu;
