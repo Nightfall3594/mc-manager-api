@@ -76,6 +76,8 @@ public class MetricsService {
      */
     private float getTPS(){
 
+        if(!serverStatus.isOnline()) return 0;
+
         try {
             String output = rconClient.command("tick query");
             Matcher matcher = Pattern.compile("Average time per tick:\\s*(\\d+(?:\\.\\d+)?)ms")
@@ -100,9 +102,7 @@ public class MetricsService {
      */
     private BigInteger getUptime(){
 
-        if(!serverStatus.isOnline()){
-            return BigInteger.ZERO;
-        }
+        if(!serverStatus.isOnline()) return BigInteger.ZERO;
 
         Pod pod = client.pods()
                 .inNamespace("chillingmc")
@@ -128,6 +128,8 @@ public class MetricsService {
      * @return cpu usage of the associated pod(s)
      */
     private double getCpuUsage() {
+
+        if(!serverStatus.isOnline()) return 0;
 
         PodMetrics podMetrics = client.top()
                 .pods()
@@ -175,6 +177,8 @@ public class MetricsService {
      */
     private BigInteger getRAMUsage() {
 
+        if(!serverStatus.isOnline()) return BigInteger.ZERO;
+
         PodMetrics metrics = client.top()
                 .pods()
                 .inNamespace("chillingmc")
@@ -219,6 +223,7 @@ public class MetricsService {
      * @return total storage used by the server in bytes
      */
     private BigInteger getDiskUsage() {
+
         Path folder = Paths.get("data");
         try (Stream<Path> stream = Files.walk(folder)) {
             long size = stream
@@ -334,6 +339,8 @@ public class MetricsService {
      * @return List of online players
      */
     public List<Player> getOnlinePlayers(){
+
+        if(!serverStatus.isOnline()) return new ArrayList<>();
 
         List<Event> playerLogs = parseLatestLog().stream()
                 .filter(log ->
