@@ -2,7 +2,7 @@ package com.example.api_servers_nightfall_is_a_dev.Metrics.models;
 
 import lombok.*;
 
-import java.time.LocalDate;
+import java.math.BigInteger;
 
 @Data
 @Builder(access = AccessLevel.PUBLIC)
@@ -11,13 +11,18 @@ import java.time.LocalDate;
 public class Metric {
 
     private boolean isOnline;
-    private int tps;
-    private LocalDate uptime;
+    private float tps;
+    private BigInteger uptime;
 
-    private float cpu;
-    private float ram;
-    private float disk;
+    private double cpu;
+    private BigInteger ram;
+    private BigInteger disk;
+
+    private double maxCpu;
+    private BigInteger maxRam;
+    private BigInteger maxDisk;
 
     private int players;
+    private int maxPlayers;
 
 }
