@@ -4,6 +4,7 @@ import org.glavo.rcon.AuthenticationException;
 import org.glavo.rcon.Rcon;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 
 import java.io.IOException;
 
@@ -11,6 +12,7 @@ import java.io.IOException;
 public class RconConfig {
 
     @Bean
+    @Lazy
     public Rcon rconClient() {
         String rconHost = System.getenv("RCON_HOST");
         String rconPort = System.getenv("RCON_PORT");

@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import jakarta.annotation.PreDestroy;
 import lombok.AllArgsConstructor;
 import org.glavo.rcon.Rcon;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -45,7 +46,7 @@ public class MetricsService {
     private final KubernetesClient client;
 
     @Autowired
-    private final Rcon rconClient;
+    private final ObjectProvider<Rcon> rconClient;
 
     @Scheduled(fixedRate = 1000)
     public void pollData(){
@@ -79,7 +80,8 @@ public class MetricsService {
         if(!serverStatus.isOnline()) return 0;
 
         try {
-            String output = rconClient.command("tick query");
+            Rcon rcon = rconClient.getObject();
+            String output = rcon.command("tick query");
             Matcher matcher = Pattern.compile("Average time per tick:\\s*(\\d+(?:\\.\\d+)?)ms")
                     .matcher(output);
 
