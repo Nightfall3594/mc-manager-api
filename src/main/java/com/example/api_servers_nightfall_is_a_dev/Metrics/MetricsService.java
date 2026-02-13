@@ -155,6 +155,8 @@ public class MetricsService {
      */
     private double getCpuCapacity() {
 
+        if(!serverStatus.isOnline()) return 0;
+
         Pod pod = client.pods()
                 .inNamespace("chillingmc")
                 .withName("chillingmc-0")
@@ -201,6 +203,9 @@ public class MetricsService {
      * @return maximum ram capacity in bytes
      */
     private BigInteger getRamCapacity(){
+
+        if(!serverStatus.isOnline()) return BigInteger.ZERO;
+
         Pod pod = client.pods()
                 .inNamespace("chillingmc")
                 .withName("chillingmc-0")
@@ -251,6 +256,8 @@ public class MetricsService {
      * @return maximum disk capacity of the volume/node in bytes
      */
     private BigInteger getDiskCapacity() {
+
+        if(!serverStatus.isOnline()) return BigInteger.ZERO;
 
         Pod pod = client.pods()
                 .inNamespace("chillingmc")
