@@ -4,6 +4,7 @@ import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Event;
 import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Metric;
 import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Player;
 import com.example.api_servers_nightfall_is_a_dev.common.ServerStatus;
+import com.example.api_servers_nightfall_is_a_dev.common.rcon.RconClientService;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -12,6 +13,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import jakarta.annotation.PreDestroy;
 import lombok.AllArgsConstructor;
 import org.glavo.rcon.Rcon;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -45,7 +47,7 @@ public class MetricsService {
     private final KubernetesClient client;
 
     @Autowired
-    private final Rcon rconClient;
+    private final RconClientService rconClient;
 
     @Scheduled(fixedRate = 1000)
     public void pollData(){
@@ -68,8 +70,6 @@ public class MetricsService {
     }
 
 
-    // TODO: Implement actual data gathering methods
-
     /**
      * Get the server's average tick rate
      * @return float representing average server tps (0-20)
@@ -79,7 +79,11 @@ public class MetricsService {
         if(!serverStatus.isOnline()) return 0;
 
         try {
-            String output = rconClient.command("tick query");
+            Rcon rcon = rconClient.getRconClient();
+
+            if(rcon == null) return 0;
+
+            String output = rcon.command("tick query");
             Matcher matcher = Pattern.compile("Average time per tick:\\s*(\\d+(?:\\.\\d+)?)ms")
                     .matcher(output);
 
@@ -91,7 +95,8 @@ public class MetricsService {
             return 0;
 
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            rconClient.closeRconClient();
+            return 0;
         }
     }
 
@@ -153,6 +158,8 @@ public class MetricsService {
      */
     private double getCpuCapacity() {
 
+        if(!serverStatus.isOnline()) return 0;
+
         Pod pod = client.pods()
                 .inNamespace("chillingmc")
                 .withName("chillingmc-0")
@@ -199,6 +206,9 @@ public class MetricsService {
      * @return maximum ram capacity in bytes
      */
     private BigInteger getRamCapacity(){
+
+        if(!serverStatus.isOnline()) return BigInteger.ZERO;
+
         Pod pod = client.pods()
                 .inNamespace("chillingmc")
                 .withName("chillingmc-0")
@@ -249,6 +259,8 @@ public class MetricsService {
      * @return maximum disk capacity of the volume/node in bytes
      */
     private BigInteger getDiskCapacity() {
+
+        if(!serverStatus.isOnline()) return BigInteger.ZERO;
 
         Pod pod = client.pods()
                 .inNamespace("chillingmc")
@@ -373,5 +385,10 @@ public class MetricsService {
     @PreDestroy
     public void closeK8sClient(){
         client.close();
+    }
+
+    @PreDestroy
+    public void closeRconClient(){
+        rconClient.closeRconClient();
     }
 }
