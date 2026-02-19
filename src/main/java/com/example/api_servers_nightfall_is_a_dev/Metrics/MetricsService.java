@@ -4,6 +4,7 @@ import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Event;
 import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Metric;
 import com.example.api_servers_nightfall_is_a_dev.Metrics.models.Player;
 import com.example.api_servers_nightfall_is_a_dev.common.ServerStatus;
+import com.example.api_servers_nightfall_is_a_dev.common.rcon.RconClientService;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -46,7 +47,7 @@ public class MetricsService {
     private final KubernetesClient client;
 
     @Autowired
-    private final ObjectProvider<Rcon> rconClient;
+    private final RconClientService rconClient;
 
     @Scheduled(fixedRate = 1000)
     public void pollData(){
@@ -69,8 +70,6 @@ public class MetricsService {
     }
 
 
-    // TODO: Implement actual data gathering methods
-
     /**
      * Get the server's average tick rate
      * @return float representing average server tps (0-20)
@@ -80,7 +79,10 @@ public class MetricsService {
         if(!serverStatus.isOnline()) return 0;
 
         try {
-            Rcon rcon = rconClient.getObject();
+            Rcon rcon = rconClient.getRconClient();
+
+            if(rcon == null) return 0;
+
             String output = rcon.command("tick query");
             Matcher matcher = Pattern.compile("Average time per tick:\\s*(\\d+(?:\\.\\d+)?)ms")
                     .matcher(output);
@@ -93,7 +95,8 @@ public class MetricsService {
             return 0;
 
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            rconClient.closeRconClient();
+            return 0;
         }
     }
 
@@ -382,5 +385,10 @@ public class MetricsService {
     @PreDestroy
     public void closeK8sClient(){
         client.close();
+    }
+
+    @PreDestroy
+    public void closeRconClient(){
+        rconClient.closeRconClient();
     }
 }
