@@ -1,4 +1,4 @@
-package com.example.api_servers_nightfall_is_a_dev.Metrics;
+package com.example.api_servers_nightfall_is_a_dev.common;
 
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
