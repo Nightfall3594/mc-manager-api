@@ -35,19 +35,15 @@ public class ConsoleService {
     @Autowired
     private final ServerStatus serverStatus;
 
-    @Async
-    public void getConsoleLog() {
-
+    public String getConsoleLog() {
         if(!serverStatus.isOnline()) {
-            simpMessagingTemplate.convertAndSend("/topic/console/live",
-                    "Server is offline. Please turn on the server and try again");
-            return;
+            return "Server is offline. Please turn on the server and try again";
+        } else {
+            return kubernetesClient.pods()
+                    .inNamespace("chillingmc")
+                    .withName("chillingmc-0")
+                    .getLog();
         }
-
-        kubernetesClient.pods()
-                .inNamespace("chillingmc")
-                .withName("chillingmc-0")
-                .watchLog(new StompLogOutputAdapter("/topic/console/live", simpMessagingTemplate));
     }
 
     public void runCommand(String command) {
