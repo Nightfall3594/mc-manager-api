@@ -59,11 +59,12 @@ public class BackupService {
     }
 
     public BackupMetadata getBackupMetadata() {
-        return new BackupMetadata(
-                getFileSize(),
-                getLastUpdated(),
-                getWorldSeed()
-        );
+        return BackupMetadata.builder()
+                .worldName(getWorldName())
+                .fileSize(getFileSize())
+                .lastModified(getLastUpdated())
+                .worldSeed(getWorldSeed())
+                .build();
     }
 
     /**
