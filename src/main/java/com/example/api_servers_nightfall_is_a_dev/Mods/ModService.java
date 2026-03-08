@@ -104,7 +104,7 @@ public class ModService {
         }
     }
 
-    public boolean saveModFile(String fileName, byte[] modData) {
+    public void saveModFile(String fileName, byte[] modData) {
         Path modsFolder = Path.of("data/minecraft/mods/").normalize();
 
         Path modFilePath = modsFolder.resolve(fileName).normalize();
@@ -119,7 +119,6 @@ public class ModService {
 
         try {
             Files.write(modFilePath, modData);
-            return true;
         } catch (IOException e) {
             throw new RuntimeException("Error saving mod file: " + modFilePath, e);
         }
