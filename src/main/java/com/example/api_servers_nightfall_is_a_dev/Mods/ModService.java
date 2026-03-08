@@ -88,8 +88,41 @@ public class ModService {
     }
 
     private String getModVersion(Path modFile) {
-        // TODO: Implement version extraction logic based on mod file type
-        return "1.0.0";
+        try(JarFile jarFile = new JarFile(modFile.toFile())) {
+
+            // For fabric mod metadata
+            JarEntry fabricJarEntry = jarFile.getJarEntry("fabric.mod.json");
+            if(fabricJarEntry != null) {
+                InputStream jis = jarFile.getInputStream(fabricJarEntry);
+                Gson jsonParser = new Gson();
+                JsonObject modJson = jsonParser.fromJson(new InputStreamReader(jis), JsonObject.class);
+
+                if(modJson.has("version")) return modJson.get("version").getAsString();
+            }
+
+            // For forge mod metadata
+            JarEntry forgeJarEntry = jarFile.getJarEntry("META-INF/mods.toml");
+            if(forgeJarEntry != null) {
+                InputStream jis = jarFile.getInputStream(forgeJarEntry);
+
+                Toml tomlFile = new Toml().read(jis);
+                List<Toml> modsList = tomlFile.getTables("version");
+
+                // note: forge mod metadata has multiple mods
+                //  only the first item contains the actual metadata
+                if (modsList != null && !modsList.isEmpty()) {
+                    Toml firstMod = modsList.getFirst();
+                    if (firstMod.contains("version")) {
+                        return firstMod.getString("version");
+                    }
+                }
+            }
+
+            return "unknown";
+
+        } catch (IOException e) {
+            return "unknown";
+        }
     }
 
     /**
