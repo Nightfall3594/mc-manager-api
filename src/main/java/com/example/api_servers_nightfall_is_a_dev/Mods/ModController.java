@@ -62,7 +62,11 @@ public class ModController {
                     .body("Cannot add mods while the server is online.");
         }
 
-        modService.saveModFile(file.getOriginalFilename(), file.getBytes());
+        try {
+            modService.saveModFile(file.getOriginalFilename(), file.getBytes());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
         return ResponseEntity.ok().build();
     }
 
