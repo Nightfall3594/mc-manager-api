@@ -3,6 +3,7 @@ package com.example.api_servers_nightfall_is_a_dev.Mods;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -51,10 +52,15 @@ public class ModService {
         return "1.0.0";
     }
 
-    private String getModFileSize(Path modFile) {
+    /**
+     * Gets the size of the mod file in bytes
+     * @param modFile mod filename
+     * @return size of the mod in bytes
+     */
+    private BigInteger getModFileSize(Path modFile) {
         try {
             long sizeInBytes = Files.size(modFile);
-            return sizeInBytes / 1024 + " KB";
+            return BigInteger.valueOf(sizeInBytes);
         } catch (IOException e) {
             throw new RuntimeException("Error getting file size for mod: " + modFile, e);
         }
