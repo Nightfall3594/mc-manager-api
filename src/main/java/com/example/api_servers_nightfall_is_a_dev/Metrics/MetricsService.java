@@ -53,7 +53,6 @@ public class MetricsService {
 
     @Scheduled(fixedRate = 1000)
     public void pollData(){
-        // TODO: Add ways to gather metrics
         Metric metric = Metric.builder()
                 .isOnline(serverStatus.isOnline())
                 .tps(getTPS())
