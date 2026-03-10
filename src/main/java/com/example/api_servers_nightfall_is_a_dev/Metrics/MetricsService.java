@@ -49,6 +49,8 @@ public class MetricsService {
     @Autowired
     private final RconClientService rconClient;
 
+    private final Pattern tpsPattern = Pattern.compile("Average time per tick:\\s*(\\d+(?:\\.\\d+)?)ms");
+
     @Scheduled(fixedRate = 1000)
     public void pollData(){
         // TODO: Add ways to gather metrics
@@ -84,8 +86,7 @@ public class MetricsService {
             if(rcon == null) return 0;
 
             String output = rcon.command("tick query");
-            Matcher matcher = Pattern.compile("Average time per tick:\\s*(\\d+(?:\\.\\d+)?)ms")
-                    .matcher(output);
+            Matcher matcher = tpsPattern.matcher(output);
 
             if(matcher.find()){
                 float msPerTick = Float.parseFloat(matcher.group(1));

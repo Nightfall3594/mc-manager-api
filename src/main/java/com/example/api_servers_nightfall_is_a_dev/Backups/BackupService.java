@@ -28,6 +28,8 @@ public class BackupService {
     @Autowired
     GlobalCache globalCache;
 
+    private final Pattern seedPattern = Pattern.compile("Seed: \\[(.*?)]");
+
     public void getBackup(OutputStream output) {
 
         final Path BACKUP_PATH = Paths.get("data/");
@@ -122,8 +124,7 @@ public class BackupService {
             if(rconClient == null) { throw new RuntimeException("RCON is inaccessible"); }
             try {
                 String input = rconClient.command("seed");
-                Pattern pattern = Pattern.compile("Seed: \\[(.*?)]");
-                Matcher matcher = pattern.matcher(input);
+                Matcher matcher = seedPattern.matcher(input);
 
                 if (matcher.find()) {
                     String seed = matcher.group(1);
